@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>피드백</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent: #ff3b3b;
+    --accent2: #ffb800;
+    --accent3: #00e5a0;
+    --text: #f0f0f0;
+    --muted: #666;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .header-left { display: flex; align-items: baseline; gap: 1rem; }
+
+  header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.8rem;
+    color: var(--accent);
+    letter-spacing: -1px;
+  }
+
+  header span {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .admin-toggle {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .admin-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .admin-toggle.active { border-color: var(--accent3); color: var(--accent3); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    padding: 2rem;
+    width: 300px;
+    text-align: center;
+  }
+
+  .modal h2 {
+    font-family: 'Space Mono', monospace;
+    color: var(--accent);
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .modal p {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 1.2rem;
+  }
+
+  .modal input[type="password"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    padding: 0.6rem 1rem;
+    width: 100%;
+    outline: none;
+    text-align: center;
+    letter-spacing: 4px;
+    margin-bottom: 0.8rem;
+    transition: border-color 0.2s;
+  }
+  .modal input[type="password"]:focus { border-color: var(--accent); }
+
+  .modal-btns { display: flex; gap: 0.5rem; }
+
+  .modal .error {
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    margin-top: 0.4rem;
+    min-height: 1rem;
+  }
+
+  input[type="text"], textarea, select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input[type="text"] { flex: 1; min-width: 200px; }
+  textarea { width: 100%; resize: vertical; min-height: 80px; }
+  select { cursor: pointer; }
+  select option { background: var(--surface); }
+
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.97); }
+  .btn.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn.ghost:hover { border-color: var(--text); color: var(--text); }
+
+  .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  #userView .submit-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    display: grid;
+    gap: 1rem;
+    max-width: 600px;
+  }
+
+  #userView .submit-form h2 {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .success-msg {
+    display: none;
+    background: #0a2a1e;
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    padding: 0.7rem 1rem;
+    margin-top: 0.5rem;
+  }
+
+  #adminView { display: none; }
+
+  .stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+  }
+  .stat .num { font-size: 1.5rem; font-weight: 700; display: block; }
+  .stat.bug .num { color: var(--accent); }
+  .stat.improve .num { color: var(--accent2); }
+  .stat.done .num { color: var(--accent3); }
+
+  .filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.4rem 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn.active, .filter-btn:hover { color: var(--text); border-color: var(--text); }
+  .filter-btn.active { background: var(--surface); }
+
+  .items { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: start;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .item.bug { border-left-color: var(--accent); }
+  .item.improvement { border-left-color: var(--accent2); }
+  .item.done { opacity: 0.45; }
+
+  .item-title { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.25rem; }
+  .item.done .item-title { text-decoration: line-through; color: var(--muted); }
+  .item-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+  .item-meta {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid;
+  }
+  .tag.bug { color: var(--accent); border-color: var(--accent); }
+  .tag.improvement { color: var(--accent2); border-color: var(--accent2); }
+  .tag.done { color: var(--accent3); border-color: var(--accent3); }
+  .tag.priority-high { color: var(--accent); border-color: var(--accent); }
+  .tag.priority-mid { color: var(--accent2); border-color: var(--accent2); }
+  .tag.priority-low { color: var(--muted); border-color: var(--muted); }
+
+  .date { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted); }
+
+  .item-actions { display: flex; gap: 0.4rem; padding-top: 0.1rem; }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 1rem;
+    padding: 0.2rem;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+  .icon-btn:hover { color: var(--text); }
+  .icon-btn.check:hover { color: var(--accent3); }
+  .icon-btn.del:hover { color: var(--accent); }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 3rem;
+    border: 1px dashed var(--border);
+  }
+
+  .logout-bar {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .logout-bar span {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent3);
+  }
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <h2>🔒 ADMIN LOGIN</h2>
+    <p>// 관리자 비밀번호 입력</p>
+    <input type="password" id="pwInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPw()" />
+    <div class="modal-btns">
+      <button class="btn" style="flex:1" onclick="checkPw()">접속</button>
+      <button class="btn ghost" style="flex:1" onclick="closeModal()">취소</button>
+    </div>
+    <div class="error" id="pwError"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-left">
+    <h1>FEEDBACK</h1>
+    <span id="modeLabel">// 피드백 제출</span>
+  </div>
+  <button class="admin-toggle" id="adminBtn" onclick="onAdminBtnClick()">관리자 접속</button>
+</header>
+
+<div id="userView">
+  <div class="submit-form">
+    <h2>// 버그 또는 개선사항을 알려주세요</h2>
+    <div class="form-row">
+      <input type="text" id="titleInput" placeholder="제목..." />
+      <select id="typeSelect">
+        <option value="bug">🔴 버그</option>
+        <option value="improvement">🟡 개선사항</option>
+      </select>
+      <select id="prioritySelect">
+        <option value="high">높음 ↑</option>
+        <option value="mid">보통 →</option>
+        <option value="low">낮음 ↓</option>
+      </select>
+    </div>
+    <textarea id="descInput" placeholder="자세한 내용 (선택사항)..."></textarea>
+    <div class="form-row">
+      <button class="btn" onclick="submitFeedback()">제출하기</button>
+    </div>
+    <div class="success-msg" id="successMsg">✓ 피드백이 제출되었습니다. 감사합니다!</div>
+  </div>
+</div>
+
+<div id="adminView">
+  <div class="logout-bar">
+    <span>✓ 관리자 모드</span>
+    <button class="btn ghost" style="font-size:0.75rem;padding:0.3rem 0.8rem" onclick="logout()">로그아웃</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat bug"><span class="num" id="countBug">0</span>버그</div>
+    <div class="stat improve"><span class="num" id="countImprove">0</span>개선사항</div>
+    <div class="stat done"><span class="num" id="countDone">0</span>완료</div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">전체</button>
+    <button class="filter-btn" onclick="setFilter('bug', this)">버그</button>
+    <button class="filter-btn" onclick="setFilter('improvement', this)">개선사항</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">완료</button>
+  </div>
+
+  <div class="items" id="itemList"></div>
+</div>
+
+<script>
+  // ================================
+  // 비밀번호 여기서 변경하세요!
+  const ADMIN_PASSWORD = '1234';
+  // ================================
+
+  let items = JSON.parse(localStorage.getItem('bt_items') || '[]');
+  let currentFilter = 'all';
+  let isAdmin = sessionStorage.getItem('bt_auth') === '1';
+
+  function init() {
+    if (isAdmin) enterAdmin();
+    else enterUser();
+  }
+
+  function enterUser() {
+    isAdmin = false;
+    document.getElementById('userView').style.display = 'block';
+    document.getElementById('adminView').style.display = 'none';
+    document.getElementById('modeLabel').textContent = '// 피드백 제출';
+    document.getElementById('adminBtn').textContent = '관리자 접속';
+    document.getElementById('adminBtn').classList.remove('active');
+  }
+
+  function enterAdmin() {
+    isAdmin = true;
+    sessionStorage.setItem('bt_auth', '1');
+    document.getElementById('userView').style.display = 'none';
+    document.getElementById('adminView').style.display = 'block';
+    document.getElementById('modeLabel').textContent = '// 관리자';
+    document.getElementById('adminBtn').textContent = '관리자 모드 ✓';
+    document.getElementById('adminBtn').classList.add('active');
+    renderAdmin();
+  }
+
+  function logout() {
+    sessionStorage.removeItem('bt_auth');
+    enterUser();
+  }
+
+  function onAdminBtnClick() {
+    if (isAdmin) { logout(); return; }
+    document.getElementById('adminModal').classList.add('show');
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwError').textContent = '';
+    setTimeout(() => document.getElementById('pwInput').focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById('adminModal').classList.remove('show');
+  }
+
+  function checkPw() {
+    const pw = document.getElementById('pwInput').value;
+    if (pw === ADMIN_PASSWORD) {
+      closeModal();
+      enterAdmin();
+    } else {
+      document.getElementById('pwError').textContent = '// 비밀번호가 틀렸습니다';
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
+  }
+
+  function submitFeedback() {
+    const title = document.getElementById('titleInput').value.trim();
+    if (!title) { document.getElementById('titleInput').focus(); return; }
+    const item = {
+      id: Date.now(),
+      title,
+      desc: document.getElementById('descInput').value.trim(),
+      type: document.getElementById('typeSelect').value,
+      priority: document.getElementById('prioritySelect').value,
+      done: false,
+      date: new Date().toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})
+    };
+    items.unshift(item);
+    save();
+    document.getElementById('titleInput').value = '';
+    document.getElementById('descInput').value = '';
+    const msg = document.getElementById('successMsg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 3000);
+  }
+
+  function save() { localStorage.setItem('bt_items', JSON.stringify(items)); }
+
+  function toggleDone(id) {
+    const item = items.find(i => i.id === id);
+    if (item) { item.done = !item.done; save(); renderAdmin(); }
+  }
+
+  function deleteItem(id) {
+    items = items.filter(i => i.id !== id);
+    save(); renderAdmin();
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAdmin();
+  }
+
+  function renderAdmin() {
+    document.getElementById('countBug').textContent = items.filter(i => i.type === 'bug' && !i.done).length;
+    document.getElementById('countImprove').textContent = items.filter(i => i.type === 'improvement' && !i.done).length;
+    document.getElementById('countDone').textContent = items.filter(i => i.done).length;
+
+    let filtered;
+    if (currentFilter === 'done') filtered = items.filter(i => i.done);
+    else if (currentFilter !== 'all') filtered = items.filter(i => i.type === currentFilter && !i.done);
+    else filtered = items.filter(i => !i.done).concat(items.filter(i => i.done));
+
+    const list = document.getElementById('itemList');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="empty">// 항목이 없습니다</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(item => `
+      <div class="item ${item.type} ${item.done ? 'done' : ''}">
+        <div>
+          <div class="item-title">${escHtml(item.title)}</div>
+          ${item.desc ? `<div class="item-desc">${escHtml(item.desc)}</div>` : ''}
+          <div class="item-meta">
+            <span class="tag ${item.done ? 'done' : item.type}">${item.done ? '✓ 완료' : item.type === 'bug' ? '버그' : '개선'}</span>
+            <span class="tag priority-${item.priority}">${item.priority === 'high' ? '높음' : item.priority === 'mid' ? '보통' : '낮음'}</span>
+            <span class="date">${item.date}</span>
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="icon-btn check" title="완료 토글" onclick="toggleDone(${item.id})">✓</button>
+          <button class="icon-btn del" title="삭제" onclick="deleteItem(${item.id})">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('titleInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitFeedback();
+  });
+
+  document.getElementById('adminModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  init();
+</script>
+</body>
+</html>
